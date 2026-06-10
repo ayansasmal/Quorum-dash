@@ -2,9 +2,9 @@
 
 React SPA — the human-facing surface for Quorum's governed knowledge graph.
 
-Not published to npm. Deployed by enterprise platform teams alongside the gateway, served via nginx on port **3002**.
+Not published to npm. Production is deployed to Vercel; local and containerized development can still serve the dashboard with Vite or nginx.
 
-> The gateway must be running at `http://localhost:3001` (or `VITE_API_URL`) for the dashboard to function.
+> The gateway must be reachable through the same-origin proxy. Vite uses `VITE_GATEWAY_URL` locally; Vercel uses `QUORUM_GATEWAY_URL`.
 
 ---
 
@@ -86,16 +86,32 @@ src/
 ## Development
 
 ```bash
-npm run dev      # Vite dev server at http://localhost:3002 (hot reload)
+npm run dev      # Vite dev server at http://localhost:5173 (hot reload)
 npm run build    # Production build → dist/
 npm run preview  # Preview production build locally
 ```
 
-The gateway must be running. Start the full stack from the repo root:
+The gateway must be running. Point the local Vite proxy at it:
 
 ```bash
-cd .. && ./scripts/setup.sh docker
+VITE_GATEWAY_URL=http://localhost:3001 npm run dev
 ```
+
+---
+
+## Vercel Deployment
+
+`vercel.json` proxies the gateway-owned paths (`/api`, `/auth`, `/oauth`, `/pg`, `/config`, and related routes) to the production gateway. All other non-file paths fall back to `index.html` for React Router.
+
+Set this production environment variable in the Vercel project:
+
+```bash
+QUORUM_GATEWAY_URL=https://api.example.com
+```
+
+The value must be an HTTPS origin without a trailing slash. After changing it, redeploy production so Vercel expands the route destination.
+
+Preview deployments are not connected to the production gateway. Quorum currently uses one production environment only.
 
 ---
 
@@ -104,8 +120,7 @@ cd .. && ./scripts/setup.sh docker
 The production image is a two-stage build: Vite compiles the SPA, nginx serves the `dist/` output and proxies `/api/*`, `/auth/*`, `/pg/*`, `/graphiti/*`, and other gateway paths to `:3001`.
 
 ```bash
-# From repo root
-docker build -f Dockerfile.dashboard -t quorum-dashboard .
+docker build -t quorum-dashboard .
 ```
 
 nginx config: `nginx.conf` — uses `resolver 127.0.0.11 valid=30s` with `set $upstream` to avoid DNS caching issues when gateway container restarts.

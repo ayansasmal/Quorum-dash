@@ -1,0 +1,22 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "routes": [
+    {
+      "src": "^/(auth|api|\\.well-known|config|health|pg|graphiti|projects|sync|schema|governance|user|admin|bump|oauth)(/.*)?$",
+      "dest": "${QUORUM_GATEWAY_URL}/$1$2",
+      "env": [
+        "QUORUM_GATEWAY_URL"
+      ]
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/.*",
+      "dest": "/index.html"
+    }
+  ]
+}
