@@ -2,7 +2,9 @@
 
 React SPA — the human-facing surface for Quorum's governed knowledge graph.
 
-Not published to npm. Production is deployed to Vercel; local and containerized development can still serve the dashboard with Vite or nginx.
+Not published to npm. Production is deployed to Vercel at
+**https://quorum-dashboard.ayansasmal.work**; local and containerized development can still serve the
+dashboard with Vite or nginx.
 
 > The gateway must be reachable through the same-origin proxy. Vite uses `VITE_GATEWAY_URL` locally; Vercel uses `QUORUM_GATEWAY_URL`.
 
@@ -100,6 +102,8 @@ VITE_GATEWAY_URL=http://localhost:3001 npm run dev
 ---
 
 ## Vercel Deployment
+
+Production dashboard: **https://quorum-dashboard.ayansasmal.work**
 
 `vercel.json` proxies the gateway-owned paths (`/api`, `/auth`, `/oauth`, `/pg`, `/config`, and related routes) to the production gateway. All other non-file paths fall back to `index.html` for React Router.
 
