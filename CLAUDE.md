@@ -67,6 +67,26 @@ The gateway must be running at `http://localhost:3001` for the dashboard to func
 
 ---
 
+## E2E Tests
+
+Browser (`@ui`) E2E tests live in [tests/e2e/](tests/e2e/) — see
+[tests/e2e/README.md](tests/e2e/README.md). The gateway is treated as a **black
+box**: tests seed state and read results over HTTP only (`QUORUM_GATEWAY_URL`),
+never importing gateway source, and drive the dashboard at `QUORUM_DASHBOARD_URL`.
+
+```bash
+npm run test:e2e          # headless (auto-starts Vite when dashboard URL is local)
+npm run test:e2e:headed   # visible browser
+npm run test:e2e:ui       # Playwright interactive UI
+```
+
+Requires a running test gateway keyed with the committed ES256 test public key.
+Every `describe` keeps its `S-XX.Y` scenario ID for traceability back to the
+gateway E2E plan; only the browser halves of those scenarios live here (the
+API-level halves stay in the gateway repo).
+
+---
+
 ## Auth Flow
 
 1. User visits `/` — redirected to `/login` if no JWT
