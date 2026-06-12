@@ -110,10 +110,28 @@ Production dashboard: **https://quorum-dashboard.ayansasmal.work**
 Set this production environment variable in the Vercel project:
 
 ```bash
-QUORUM_GATEWAY_URL=https://api.example.com
+QUORUM_GATEWAY_URL=https://quorum-gateway.ayansasmal.work
 ```
 
-The value must be an HTTPS origin without a trailing slash. After changing it, redeploy production so Vercel expands the route destination.
+The value must be an HTTPS origin without a trailing slash. After changing it, redeploy production (`vercel --prod`) so Vercel expands the route destination — env changes do **not** apply to the already-built deployment until a rebuild.
+
+> **Gotcha — set it as a _plain_ var, not encrypted.** The `vercel env add` CLI
+> (≥ v54.x) defaults to an encrypted/sensitive var and has silently stored an
+> **empty** value here, leaving the proxy pointed at nothing and every gateway
+> path returning `502 DNS_HOSTNAME_NOT_FOUND`. The gateway URL is public, not a
+> secret — create it as `type: plain` via the REST API and verify the stored
+> value before redeploying:
+> ```bash
+> # create (plain)
+> curl -X POST "https://api.vercel.com/v10/projects/$PRJ/env?teamId=$TEAM" \
+>   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+>   -d '{"key":"QUORUM_GATEWAY_URL","value":"https://quorum-gateway.ayansasmal.work","type":"plain","target":["production"]}'
+> # verify the stored value is non-empty
+> curl -s "https://api.vercel.com/v9/projects/$PRJ/env?teamId=$TEAM&decrypt=true" \
+>   -H "Authorization: Bearer $TOKEN" | jq '.envs[] | select(.key=="QUORUM_GATEWAY_URL") | .value'
+> ```
+> After redeploy, confirm `curl -sI https://quorum-dashboard.ayansasmal.work/auth/github`
+> returns a `302` (OAuth redirect) with **no** `x-vercel-error` header.
 
 Preview deployments are not connected to the production gateway. Quorum currently uses one production environment only.
 
