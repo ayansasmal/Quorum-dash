@@ -4,6 +4,21 @@ import { useAuth } from '../context/AuthContext.jsx'
 import ConfirmDialog from '../components/knowledge/ConfirmDialog.jsx'
 
 /**
+ * Convert stable gateway error fields into concise admin-panel guidance.
+ *
+ * @param {Error & { body?: { error?: string, rule?: string } }} error
+ * @returns {string}
+ */
+function adminErrorMessage(error) {
+  if (error.body?.error === 'already_admin') return 'Already an admin.'
+  if (error.body?.error === 'last_admin') return 'Cannot remove the last admin.'
+  if (error.body?.rule === 'REASON_REQUIRED') {
+    return 'Reason must be at least 10 meaningful characters.'
+  }
+  return error.message
+}
+
+/**
  * Admin page — platform admin management.
  * Only visible when user.is_admin is true; the gateway enforces this server-side too.
  */
@@ -40,12 +55,17 @@ export default function Admin() {
   async function handleAdd() {
     setAddMsg(null)
     try {
-      await adminUsers.mutateAsync({ action: 'add', github_username: addUsername, reason: addReason })
-      setAddMsg({ ok: true, text: `${addUsername} added as platform admin.` })
+      const githubUsername = addUsername.trim()
+      await adminUsers.mutateAsync({
+        action:          'add',
+        github_username: githubUsername,
+        reason:          addReason.trim(),
+      })
+      setAddMsg({ ok: true, text: `${githubUsername} added as platform admin.` })
       setAddUsername('')
       setAddReason('')
     } catch (err) {
-      setAddMsg({ ok: false, text: err.message })
+      setAddMsg({ ok: false, text: adminErrorMessage(err) })
     }
   }
 
@@ -63,7 +83,10 @@ export default function Admin() {
       })
       setRemoveMsg((prev) => ({ ...prev, [username]: { ok: true, text: 'Removed.' } }))
     } catch (err) {
-      setRemoveMsg((prev) => ({ ...prev, [username]: { ok: false, text: err.message } }))
+      setRemoveMsg((prev) => ({
+        ...prev,
+        [username]: { ok: false, text: adminErrorMessage(err) },
+      }))
     }
   }
 
@@ -107,15 +130,15 @@ export default function Admin() {
                       {removeMsg[a.github_username].text}
                     </span>
                   )}
-                  {a.github_username !== user.sub && (
-                    <button
-                      onClick={() => handleRemove(a.github_username)}
-                      disabled={adminUsers.isPending}
-                      className="text-xs text-gray-400 hover:text-red-400 disabled:opacity-40 transition-colors"
-                    >
-                      Remove
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(a.github_username)}
+                    disabled={admins.length === 1 || adminUsers.isPending}
+                    title={admins.length === 1 ? 'Cannot remove the last admin' : undefined}
+                    className="text-xs text-gray-400 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+                  >
+                    {a.github_username === user.sub ? 'Remove self' : 'Remove'}
+                  </button>
                 </div>
               </div>
             ))}
@@ -139,7 +162,7 @@ export default function Admin() {
             className="col-span-6 input-sm"
           />
           <button
-            disabled={!addUsername || addReason.length < 10 || adminUsers.isPending}
+            disabled={!addUsername.trim() || addReason.trim().length < 10 || adminUsers.isPending}
             onClick={handleAdd}
             className="col-span-2 rounded bg-blue-600 hover:bg-blue-500 disabled:opacity-40 px-3 py-1 text-xs font-medium text-white"
           >

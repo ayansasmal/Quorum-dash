@@ -39,7 +39,7 @@ src/
     Audit.jsx             — Audit timeline
     Config.jsx            — Project config editor + Global Catalogs card (v0.4)
     Status.jsx            — System health status
-    Admin.jsx             — Platform admin panel
+    Admin.jsx             — Platform admin add/remove + project archival panel
     Login.jsx             — GitHub OAuth entry point
     NoProjects.jsx        — Self-serve welcome for authenticated users without a project
     ProjectSelector.jsx   — Project search + switch

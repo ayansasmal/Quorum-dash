@@ -23,6 +23,9 @@ requests to `http://localhost:3001`.
   `src/api/client.js`. Do not send that header when no project is selected.
 - The dashboard never grants authorization by itself. Gateway middleware is
   authoritative for membership and platform-admin checks.
+- Admin removal is allowed for the current user when another admin remains.
+  Disable the last removal in the UI, but preserve the gateway's `last_admin`
+  guard as the authoritative check.
 
 ## Frontend Conventions
 
