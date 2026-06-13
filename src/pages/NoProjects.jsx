@@ -16,13 +16,12 @@ export default function NoProjects() {
         <section className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl shadow-gray-200/40 dark:border-gray-800 dark:bg-gray-900 dark:shadow-black/20">
           <div className="border-b border-gray-200 bg-gradient-to-br from-violet-600 to-blue-700 px-8 py-10 text-white dark:border-gray-800">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-100">
-              Quorum onboarding
+              Quorum
             </p>
             <h1 className="mt-3 text-3xl font-bold tracking-tight">
-              You&apos;re in - no projects yet
+              Hi <span className="text-white">{user?.sub}</span>, there are no Quorum projects accessible to you
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-blue-100">
-              Signed in as <span className="font-semibold text-white">{user?.sub}</span>.
               Create a project from your repository to start sharing durable engineering context.
             </p>
           </div>
@@ -48,10 +47,7 @@ export default function NoProjects() {
               with the new project selected.
             </div>
 
-            <div className="flex items-center justify-between gap-4 border-t border-gray-200 pt-5 dark:border-gray-800">
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                No administrator invitation is required to create the first project.
-              </p>
+            <div className="flex items-center justify-end gap-4 border-t border-gray-200 pt-5 dark:border-gray-800">
               <button
                 type="button"
                 onClick={logout}

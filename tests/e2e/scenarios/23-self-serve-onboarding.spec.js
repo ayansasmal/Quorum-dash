@@ -16,7 +16,7 @@ test.describe('S-23.3 — Dashboard zero-projects welcome', () => {
 
     await page.goto(DASHBOARD_URL)
 
-    await expect(page.getByRole('heading', { name: /no projects yet/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /no Quorum projects accessible to you/i })).toBeVisible()
     await expect(page.getByText('quorum config_upload', { exact: true })).toBeVisible()
     await expect(page).not.toHaveURL(/\/login(?:[/?#]|$)/)
   })
