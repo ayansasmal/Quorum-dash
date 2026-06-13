@@ -5,7 +5,7 @@
  *   'unauthenticated' → user has no token and no pending OAuth flow
  *   'discovering'     → pre-auth JWT held; fetching project list from gateway
  *   'selecting'       → project list loaded; user must pick one
- *   'authenticated'   → project-scoped JWT active; dashboard is usable
+ *   'authenticated'   → JWT active; project scope may be null for new users
  *
  * Login flow (first time):
  *   1. User clicks "Login with GitHub" → /auth/github → GitHub OAuth
@@ -13,6 +13,7 @@
  *        1 project  → scoped JWT  → #token=<jwt> in fragment
  *        n projects → pre-auth JWT (5 min, no project claim) → #token=<jwt> in fragment
  *   3. Login.jsx reads #token= → calls completeOAuth(jwt)
+ *      - zero projects → _applyJwt() → 'authenticated' with no active project
  *      - scoped JWT  → _applyJwt() → 'authenticated'
  *      - pre-auth JWT → GET /auth/projects → 'discovering' → 'selecting'
  *   4. selectProject(slug) → POST /auth/switch with pre-auth JWT → scoped JWT → 'authenticated'
@@ -299,6 +300,7 @@ export function AuthProvider({ children }) {
    *
    * v0.3: the gateway always issues a slim JWT { sub, is_admin }. Project context
    * is resolved by fetching GET /user/profile/{sub} rather than reading a JWT claim.
+   *   - 0 projects → applies JWT without project scope → 'authenticated'
    *   - 1 project  → auto-selects, applies JWT → 'authenticated'
    *   - n projects → stores project list, transitions to 'selecting'
    *
@@ -329,8 +331,16 @@ export function AuthProvider({ children }) {
 
     const projects = userProfile.projects ?? []
     if (projects.length === 0) {
-      setError('No projects found. Ask a principal architect to add your GitHub username to a project config.')
-      setAuthPhase('unauthenticated')
+      setAvailableProjects([])
+      writeStoredProjects([])
+      setSelectedProject(null)
+      clearStoredProject()
+      _applyJwt(jwt, {
+        project:         null,
+        role:            null,
+        team:            null,
+        base_confidence: null,
+      })
       pendingPreAuthRef.current = null
       return
     }

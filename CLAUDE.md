@@ -41,6 +41,7 @@ src/
     Status.jsx            — System health status
     Admin.jsx             — Platform admin panel
     Login.jsx             — GitHub OAuth entry point
+    NoProjects.jsx        — Self-serve welcome for authenticated users without a project
     ProjectSelector.jsx   — Project search + switch
   components/
     layout/               — Shell, nav, sidebar
@@ -91,9 +92,10 @@ API-level halves stay in the gateway repo).
 
 1. User visits `/` — redirected to `/login` if no JWT
 2. Click "Login with GitHub" → `GET /auth/login` → GitHub OAuth
-3. Gateway callback → issues ES256 JWT + refresh token → stored in AuthContext
-4. All API calls include `Authorization: Bearer <jwt>` header
-5. On 401 → attempt silent refresh via `POST /auth/refresh`; on failure → back to `/login`
+3. Gateway callback → issues ES256 JWT → stored in AuthContext
+4. Users with no memberships remain authenticated and see the self-serve onboarding page
+5. Project-scoped API calls include `Authorization: Bearer <jwt>` and `X-Quorum-Project`
+6. On 401 → attempt silent refresh via `POST /auth/refresh`; on failure → back to `/login`
 
 ---
 

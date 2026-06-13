@@ -9,6 +9,7 @@ import SessionExpiredModal from './components/session/SessionExpiredModal.jsx'
 
 // Pages
 import Login           from './pages/Login.jsx'
+import NoProjects      from './pages/NoProjects.jsx'
 import ProjectSelector from './pages/ProjectSelector.jsx'
 import Stats           from './pages/Stats.jsx'
 import Graph           from './pages/Graph.jsx'
@@ -89,14 +90,17 @@ function AdminRoute() {
  * Redirect users in 'selecting' phase to /select-project.
  */
 function ProtectedRoute() {
-  const { token, authPhase } = useAuth()
-  const location             = useLocation()
+  const { token, authPhase, selectedProject } = useAuth()
+  const location                              = useLocation()
 
   if (authPhase === 'selecting') {
     return <Navigate to="/select-project" replace />
   }
   if (!token) {
     return <Navigate to="/login" state={{ from: location }} replace />
+  }
+  if (authPhase === 'authenticated' && !selectedProject) {
+    return <NoProjects />
   }
   return (
     <Layout>
