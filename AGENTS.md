@@ -40,3 +40,5 @@ requests to `http://localhost:3001`.
 
 Run `npm run build` after frontend changes. Run the relevant Playwright scenario
 for behavior changes, and use the in-app browser for significant visual changes.
+Projectless browser coverage lives in
+`tests/e2e/scenarios/23-self-serve-onboarding.spec.js`.

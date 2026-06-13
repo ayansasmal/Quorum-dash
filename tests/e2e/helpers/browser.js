@@ -56,6 +56,7 @@ export const DASHBOARD_URL = process.env.QUORUM_DASHBOARD_URL ?? 'http://localho
  * @param {string} [opts.role='principal_architect']    Member role in project
  * @param {number} [opts.base_confidence=0.9]           PA confidence floor
  * @param {boolean} [opts.is_admin=false]               Platform admin flag
+ * @param {object[]} [opts.projects]                     Explicit membership list; pass [] for none
  */
 export async function injectSession(page, {
   sub             = 'test-pe',
@@ -63,6 +64,7 @@ export async function injectSession(page, {
   role            = 'principal_architect',
   base_confidence = 0.9,
   is_admin        = false,
+  projects: explicitProjects,
 } = {}) {
   // Mint a fresh 1-hour JWT so AuthContext expiry check passes even if the test
   // runner took a long time to reach this point. The private key is the committed
@@ -91,12 +93,13 @@ export async function injectSession(page, {
   // The projects list is what AuthContext uses to resolve `currentProjectData`.
   // Without an entry here whose group_id matches selectedProject, the app
   // treats the session as a guest (isGuest = true) and MemberRoute redirects to /.
-  const projects = [{
+  /** @type {object[]} */
+  const projects = explicitProjects ?? (project ? [{
     group_id:        project,
     role,
     base_confidence,
     is_owner:        role === 'principal_architect',
-  }]
+  }] : [])
 
   // page.addInitScript() runs before every navigation in this page object — the
   // browser context executes this script before any page JavaScript. We pass the
@@ -105,14 +108,15 @@ export async function injectSession(page, {
   await page.addInitScript(
     ({ sk, sv, pk, pv, lk, lv }) => {
       sessionStorage.setItem(sk, sv)
-      sessionStorage.setItem(pk, pv)
+      if (pv) sessionStorage.setItem(pk, pv)
+      else sessionStorage.removeItem(pk)
       sessionStorage.setItem(lk, lv)
     },
     {
       sk: 'quorum_session',
       sv: JSON.stringify({ token: jwtString, user }),
       pk: 'quorum_active_project',
-      pv: project,
+      pv: project ?? null,
       lk: 'quorum_projects',
       lv: JSON.stringify(projects),
     },

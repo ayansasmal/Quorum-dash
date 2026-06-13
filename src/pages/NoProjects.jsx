@@ -18,7 +18,9 @@ export default function NoProjects() {
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-100">
               Quorum onboarding
             </p>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight">Your account is ready.</h1>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight">
+              You&apos;re in - no projects yet
+            </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-blue-100">
               Signed in as <span className="font-semibold text-white">{user?.sub}</span>.
               Create a project from your repository to start sharing durable engineering context.

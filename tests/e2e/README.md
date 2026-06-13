@@ -52,6 +52,7 @@ tests/e2e/
     14-dashboard-visual            — S-14 graph / config / status / audit / selector
     16-knowledge-history-ui        — S-16.6 version-history drawer
     20-cross-catalog-search-ui     — S-20.8 search interaction
+    23-self-serve-onboarding       — S-23.3 projectless-user welcome state
     22-portfolio-intelligence-ui   — S-22.5–8 portfolio page
   helpers/
     api.js        — axios client (Authorization + X-Quorum-Project) against the gateway

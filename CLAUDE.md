@@ -86,6 +86,10 @@ Every `describe` keeps its `S-XX.Y` scenario ID for traceability back to the
 gateway E2E plan; only the browser halves of those scenarios live here (the
 API-level halves stay in the gateway repo).
 
+`S-23.3` covers the authenticated zero-project welcome state. The scenario is
+implemented and discoverable; its live browser run was blocked on June 13, 2026
+by the local command-approval service usage limit.
+
 ---
 
 ## Auth Flow
