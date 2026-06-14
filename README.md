@@ -168,4 +168,5 @@ nginx config: `nginx.conf` — uses `resolver 127.0.0.11 valid=30s` with `set $u
 - `apiFetch` automatically handles 401 → silent refresh → retry before propagating errors
 - `AuthContext` uses `registerProjectGetter(() => user?.project ?? null)` — no project header is sent on public/auth routes since `user` is null before login
 - The config editor validates against `GET /schema/config` (Zod schema from gateway) for live JSON validation
+- Config members created in the dashboard derive the required `name` field from `github_username`; editing an existing member with an explicit display name preserves that name
 - `KnowledgeDetail` fetches `/api/knowledge/:topic/:key` for content (PG `summary` column) and `/pg/versions/:topic/:key/history` for the version timeline — these are separate requests to keep the list query light

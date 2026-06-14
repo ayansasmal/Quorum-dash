@@ -221,6 +221,26 @@ describe('S-14.2 — Config Editor', () => {
     await expect(page.getByTestId('save-success')).toBeVisible({ timeout: 8000 })
     await expect(page.getByTestId('save-success')).toContainText('Config saved successfully.')
   })
+
+  test('step 4 — adding a member derives the required name from the GitHub username', async ({ page }) => {
+    test.skip(shouldSkip, SKIP_MSG)
+    await injectSession(page, { sub: 'test-pe', project: PROJECT })
+    await page.goto(`${DASHBOARD_URL}/config`)
+    await page.waitForLoadState('networkidle')
+
+    const editor = page.locator('textarea').first()
+    await expect(editor).toBeVisible({ timeout: 8000 })
+
+    await page.getByRole('button', { name: '+ Add member' }).click()
+    const usernameInputs = page.getByPlaceholder('github_username')
+    await usernameInputs.last().fill('new-dashboard-member')
+
+    const draft = JSON.parse(await editor.inputValue())
+    expect(draft.members.at(-1)).toMatchObject({
+      name:            'new-dashboard-member',
+      github_username: 'new-dashboard-member',
+    })
+  })
 })
 
 // ─────────────────────────────────────────────────────────────────────────────

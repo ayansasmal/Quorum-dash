@@ -88,18 +88,39 @@ export default function Config() {
     }
   }
 
+  /**
+   * Updates a member field while keeping generated display names aligned with
+   * their GitHub usernames. Explicit human-readable names remain unchanged.
+   * @param {number} idx
+   * @param {string} field
+   * @param {string | number} value
+   */
   function updateMember(idx, field, value) {
     setDraft((d) => {
       const members = [...(d.members ?? [])]
-      members[idx] = { ...members[idx], [field]: value }
+      const current = members[idx]
+      const updates = { [field]: value }
+      if (field === 'github_username' && (!current.name || current.name === current.github_username)) {
+        updates.name = value
+      }
+      members[idx] = { ...current, ...updates }
       return { ...d, members }
     })
   }
 
+  /**
+   * Appends a schema-complete member draft.
+   */
   function addMember() {
     setDraft((d) => ({
       ...d,
-      members: [...(d.members ?? []), { github_username: '', role: 'engineer', team: '', base_confidence: 0.7 }],
+      members: [...(d.members ?? []), {
+        name: '',
+        github_username: '',
+        role: 'engineer',
+        team: '',
+        base_confidence: 0.7,
+      }],
     }))
   }
 

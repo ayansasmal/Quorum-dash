@@ -114,4 +114,5 @@ Full light/dark theme via `ThemeContext`. Toggle in nav. Preferences persisted i
 - Uses React 19 + React Router 7 + TanStack Query 5
 - Graph visualization: Cytoscape.js with `cose-bilkent` + `dagre` layouts
 - Config editor: validates against `GET /schema/config` JSON Schema from the gateway
+- Config member rows must satisfy the shared schema: new rows derive `name` from `github_username`, while existing explicit names are preserved
 - Project selector: search + pagination (10/page), supports cancel-back-to-project

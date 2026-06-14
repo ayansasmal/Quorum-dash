@@ -35,6 +35,8 @@ requests to `http://localhost:3001`.
 - Keep project-scoped routes behind `ProtectedRoute`; do not mount `Layout`
   for projectless users because its children issue project-scoped queries.
 - Add JSDoc to new components, functions, and non-obvious state or constants.
+- Config members require both `name` and `github_username`; dashboard-created rows
+  derive `name` from the username unless an explicit display name already exists.
 
 ## Verification
 
