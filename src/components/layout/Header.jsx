@@ -7,14 +7,14 @@
  * No GitHub re-OAuth is needed for switching — POST /auth/switch handles it.
  */
 
-import { ArrowLeftRight, Sun, Moon } from 'lucide-react'
-import { useAuth }                   from '../../context/AuthContext.jsx'
-import { useTheme }                  from '../../context/ThemeContext.jsx'
+import { ArrowLeftRight, Sun, Moon, Menu } from 'lucide-react'
+import { useAuth }                         from '../../context/AuthContext.jsx'
+import { useTheme }                        from '../../context/ThemeContext.jsx'
 
 /**
- * @param {{ title: string }} props
+ * @param {{ title: string, onMenuClick: () => void }} props
  */
-export default function Header({ title }) {
+export default function Header({ title, onMenuClick }) {
   const { user, availableProjects, selectedProject, currentProjectData, switchProject } = useAuth()
   const { theme, toggle } = useTheme()
 
@@ -23,8 +23,18 @@ export default function Header({ title }) {
   const projectLabel = currentProjectData?.name ?? selectedProject ?? user?.project ?? null
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-950/90 backdrop-blur-sm px-6">
-      <h1 className="text-sm font-medium text-gray-800 dark:text-gray-200">{title}</h1>
+    <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-950/90 backdrop-blur-sm px-4 lg:px-6">
+      <div className="flex items-center gap-3">
+        {/* Hamburger — mobile only */}
+        <button
+          onClick={onMenuClick}
+          aria-label="Open navigation"
+          className="lg:hidden rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <h1 className="text-sm font-medium text-gray-800 dark:text-gray-200">{title}</h1>
+      </div>
 
       <div className="flex items-center gap-3">
 
