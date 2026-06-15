@@ -12,9 +12,10 @@ import VersionTimeline from './VersionTimeline.jsx'
 import { entityBadge, fmtDate } from '../../lib/utils.js'
 
 export default function KnowledgeDetail({ row, onClose }) {
-  const [showEdit,       setShowEdit]       = useState(false)
-  const [showPromote,    setShowPromote]    = useState(false)
-  const [showDeprecate,  setShowDeprecate]  = useState(false)
+  const [showEdit,         setShowEdit]         = useState(false)
+  const [showPromote,      setShowPromote]      = useState(false)
+  const [showDeprecate,    setShowDeprecate]    = useState(false)
+  const [selectedVersion,  setSelectedVersion]  = useState(null)
 
   const { currentProjectData } = useAuth()
   const isPE = currentProjectData?.role === 'principal_architect'
@@ -35,10 +36,9 @@ export default function KnowledgeDetail({ row, onClose }) {
 
   const versions = Array.isArray(history) ? history : []
   const tags = detail?.tags ?? row.tags ?? []
-  // Use detail.content (from PG summary + Graphiti fallback), then fall back to
-  // the most recent version's summary from the already-fetched history, so entries
-  // with content stored only in history records still render without a second fetch.
-  const content = detail?.content || versions[0]?.summary || null
+  // When a version is selected from the timeline, show its content instead of the current version.
+  // Fall back: detail.content (PG summary + Graphiti fallback) → latest history summary.
+  const content = selectedVersion?.summary ?? detail?.content ?? versions[0]?.summary ?? null
   const status = detail?.status ?? row.status ?? 'ACTIVE'
 
   return (
@@ -94,7 +94,21 @@ export default function KnowledgeDetail({ row, onClose }) {
 
         {/* Content */}
         <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800">
-          <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-3">Knowledge</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500">Knowledge</h3>
+            {selectedVersion && (
+              <span className="text-[10px] text-amber-500 font-medium">
+                v{selectedVersion.version} · {selectedVersion.status}
+                {' '}·{' '}
+                <button
+                  className="underline hover:text-amber-600"
+                  onClick={() => setSelectedVersion(null)}
+                >
+                  back to current
+                </button>
+              </span>
+            )}
+          </div>
           {isLoading ? (
             <p className="text-xs text-gray-400 animate-pulse">Loading…</p>
           ) : content ? (
@@ -110,7 +124,11 @@ export default function KnowledgeDetail({ row, onClose }) {
         {/* Version history */}
         <div data-testid="version-timeline" className="px-5 py-4">
           <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-4">Version history</h3>
-          <VersionTimeline versions={versions} />
+          <VersionTimeline
+            versions={versions}
+            selectedVersion={selectedVersion}
+            onSelect={setSelectedVersion}
+          />
         </div>
 
         {/* Edit (supersede) modal */}
