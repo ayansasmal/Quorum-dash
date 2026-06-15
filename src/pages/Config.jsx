@@ -3,6 +3,7 @@ import { useConfig, useValidateConfig, useSaveConfig } from '../api/config.js'
 import { useTransferOwnership, useUpdateRole } from '../api/governance.js'
 import { useGlobals } from '../api/conformance.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import VisibilityCard from '../components/config/VisibilityCard.jsx'
 
 const ROLES = ['engineer', 'senior_engineer', 'tech_lead', 'architect', 'principal_architect']
 
@@ -18,10 +19,15 @@ export default function Config() {
   const isOwner = currentProjectData?.is_owner ?? false
   const isAdmin = user?.is_admin ?? false
   const canGovern = isOwner || isAdmin
+  /** Whether the active identity matches the gateway's config-write authority. */
+  const canManageVisibility =
+    currentProjectData?.role === 'principal_architect' || isAdmin
 
   const [draft,       setDraft]       = useState(null)
   const [validErr,    setValidErr]    = useState(null)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  /** Inline result from the most recent visibility-only config mutation. */
+  const [visibilityMsg, setVisibilityMsg] = useState(null)
 
   // Governance form state
   const [transferTo,     setTransferTo]     = useState('')
@@ -85,6 +91,32 @@ export default function Config() {
       setSaveSuccess(true)
     } catch (err) {
       setValidErr(err.message)
+    }
+  }
+
+  /**
+   * Persists a visibility change using the complete current config.
+   *
+   * @param {boolean} isPublic
+   * @returns {Promise<void>}
+   */
+  async function handleVisibilityChange(isPublic) {
+    /** Full config payload required by PUT /config/:projectId. */
+    const updated = { ...draft, is_public: isPublic }
+    setVisibilityMsg(null)
+    setSaveSuccess(false)
+    try {
+      await save.mutateAsync(updated)
+      setDraft(updated)
+      setVisibilityMsg({
+        ok: true,
+        text: `Project is now ${isPublic ? 'public' : 'private'}.`,
+      })
+    } catch (err) {
+      setVisibilityMsg({
+        ok: false,
+        text: err.message,
+      })
     }
   }
 
@@ -268,6 +300,14 @@ export default function Config() {
           )
         })()}
       </Card>
+
+      <VisibilityCard
+        isPublic={draft.is_public === true}
+        onChange={handleVisibilityChange}
+        canManageVisibility={canManageVisibility}
+        isSaving={save.isPending}
+        message={visibilityMsg}
+      />
 
       {/* Raw JSON editor for advanced settings */}
       <Card title="Raw config (advanced)">

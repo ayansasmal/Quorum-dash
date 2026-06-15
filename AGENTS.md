@@ -37,6 +37,10 @@ requests to `http://localhost:3001`.
 - Add JSDoc to new components, functions, and non-obvious state or constants.
 - Config members require both `name` and `github_username`; dashboard-created rows
   derive `name` from the username unless an explicit display name already exists.
+- Config visibility uses `currentProjectData.role === 'principal_architect'` or
+  `user.is_admin`; slim JWT-backed `user.role` is not authoritative. Public
+  projects are read-only for authenticated non-members, and public-to-private
+  changes require confirmation.
 
 ## Verification
 

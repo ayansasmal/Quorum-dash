@@ -19,7 +19,7 @@ dashboard with Vite or nginx.
 | **Pending** | `/pending` | Conflict resolution queue and DRAFT review — the primary human decision surface |
 | **Knowledge** | `/knowledge` | Paginated knowledge browser — filter by topic/status/author, click for detail panel |
 | **Audit** | `/audit` | Tamper-evident audit timeline — SHA256 chain, lineage, actor attribution |
-| **Config** | `/config` | JSON Schema-validated project config editor + ownership transfer + role management |
+| **Config** | `/config` | JSON Schema-validated project config editor + visibility + ownership transfer + role management |
 | **Admin** | `/admin` | Platform admin panel — add/remove admins (visible to `is_admin` only) |
 | **Status** | `/status` | System health: Graphiti, PostgreSQL, Gateway, Redis connectivity |
 | **Login** | `/login` | GitHub OAuth entry point |
@@ -67,6 +67,8 @@ src/
   main.jsx                — Vite entry point
   pages/                  — One file per route (see table above)
   components/
+    config/
+      VisibilityCard.jsx — PA/admin public-private control with destructive confirmation
     knowledge/
       KnowledgeDetail.jsx — Slide-in panel: content, version history, confidence bar, tags
       VersionTimeline.jsx — Visual version chain with status badges
@@ -169,4 +171,5 @@ nginx config: `nginx.conf` — uses `resolver 127.0.0.11 valid=30s` with `set $u
 - `AuthContext` uses `registerProjectGetter(() => user?.project ?? null)` — no project header is sent on public/auth routes since `user` is null before login
 - The config editor validates against `GET /schema/config` (Zod schema from gateway) for live JSON validation
 - Config members created in the dashboard derive the required `name` field from `github_username`; editing an existing member with an explicit display name preserves that name
+- Project visibility is editable by principal architects and platform admins. Public projects allow authenticated non-members to read but not write; changing a public project to private requires confirmation.
 - `KnowledgeDetail` fetches `/api/knowledge/:topic/:key` for content (PG `summary` column) and `/pg/versions/:topic/:key/history` for the version timeline — these are separate requests to keep the list query light

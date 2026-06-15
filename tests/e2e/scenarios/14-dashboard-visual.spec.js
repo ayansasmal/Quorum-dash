@@ -6,7 +6,7 @@
  *
  * Sub-scenarios:
  *   S-14.1  Knowledge graph (/graph) — domain select, canvas render, legend, node click → NodePanel
- *   S-14.2  Config editor (/config) — renders, schema-invalid JSON triggers error + disables Save
+ *   S-14.2  Config editor (/config) — validation/save + governed project visibility control
  *   S-14.3  System status (/status) — service health indicators show Healthy in test stack
  *   S-14.4  Audit timeline (/audit) — entries listed, author filter narrows results
  *   S-14.5  Project selector — switch button triggers selector, search filters, cancel returns
@@ -22,7 +22,8 @@
  *
  *   Config editor: textarea is a controlled React component. Invalid JSON that passes JSON.parse
  *   but fails Zod schema validation triggers POST /config/validate → 400 → validErr state →
- *   red error div appears and Save button becomes disabled.
+ *   red error div appears and Save button becomes disabled. Visibility tests mock the Config API
+ *   boundary so full-config PUT, PA/admin authority, confirmation, and error states remain isolated.
  *
  *   Audit: AuditEntry has no click handler — no detail panel on click. Filter inputs
  *   (author, tool, topic) drive GET /pg/audit query params.
@@ -49,6 +50,101 @@ const PROJECT = 'quorum-test-project'
 
 const SKIP_MSG  = 'Browser tests run in Docker mode only (QUORUM_DASHBOARD_URL not set)'
 const shouldSkip = !process.env.QUORUM_DASHBOARD_URL
+
+/**
+ * Stubs the Config page API boundary without mutating the shared E2E project.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {boolean} isPublic
+ * @param {{ putStatus?: number }} [options]
+ * @returns {Promise<object[]>} Captured PUT request bodies.
+ */
+async function mockVisibilityConfig(page, isPublic, { putStatus = 200 } = {}) {
+  const writes = []
+  const config = {
+    group_id: PROJECT,
+    project: 'Quorum Test Project',
+    owner: 'test-pe',
+    members: [{
+      name: 'Test Principal Architect',
+      github_username: 'test-pe',
+      role: 'principal_architect',
+      team: 'platform',
+      base_confidence: 0.9,
+    }],
+    domains: { engineering: {} },
+    is_public: isPublic,
+  }
+
+  await page.route(`**/config/${PROJECT}`, async (route) => {
+    if (route.request().method() === 'PUT') {
+      writes.push(route.request().postDataJSON())
+      await route.fulfill({
+        status: putStatus,
+        contentType: 'application/json',
+        body: JSON.stringify(putStatus === 200
+          ? { ok: true, message: 'Config updated successfully.' }
+          : { error: 'storage_error', message: 'Failed to update config in S3' }),
+      })
+      return
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(config),
+    })
+  })
+
+  await page.route('**/config/validate', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ valid: true }),
+  }))
+
+  await page.route('**/api/globals', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ catalogs: [] }),
+  }))
+
+  await page.route('**/api/stats', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      total: 0,
+      by_status: {},
+      by_domain: {},
+      confidence: { avg: 0, min: 0, max: 0, distribution: [] },
+    }),
+  }))
+
+  await page.route('**/api/conformance', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      score: null,
+      status: 'UNCERTIFIED',
+      breakdown: {},
+      scan_count: 0,
+      last_scan_at: null,
+      catalogs: [],
+    }),
+  }))
+
+  return writes
+}
+
+/**
+ * Boots the SPA at its non-proxied root and navigates to Config client-side.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<void>}
+ */
+async function openMockedConfigPage(page) {
+  await page.goto(DASHBOARD_URL)
+  await page.getByRole('link', { name: 'Config' }).click()
+}
 
 describe('S-14 — Dashboard Visual', { tag: '@ui' }, () => {
 
@@ -240,6 +336,86 @@ describe('S-14.2 — Config Editor', () => {
       name:            'new-dashboard-member',
       github_username: 'new-dashboard-member',
     })
+  })
+
+  test('step 5 — principal architect can make a private project public with the full config payload', async ({ page }) => {
+    test.skip(shouldSkip, SKIP_MSG)
+    const writes = await mockVisibilityConfig(page, false)
+    await injectSession(page, { sub: 'test-pe', role: 'principal_architect', project: PROJECT })
+    await openMockedConfigPage(page)
+
+    await expect(page.getByTestId('project-visibility-card')).toBeVisible()
+    await expect(page.getByTestId('visibility-private-option')).toHaveAttribute('aria-pressed', 'true')
+    await page.getByTestId('visibility-public-option').click()
+
+    await expect.poll(() => writes.length).toBe(1)
+    expect(writes[0]).toMatchObject({
+      group_id: PROJECT,
+      owner: 'test-pe',
+      is_public: true,
+    })
+    await expect(page.getByTestId('visibility-success')).toContainText('Project is now public')
+  })
+
+  test('step 6 — making a public project private requires confirmation and cancel preserves public state', async ({ page }) => {
+    test.skip(shouldSkip, SKIP_MSG)
+    const writes = await mockVisibilityConfig(page, true)
+    await injectSession(page, { sub: 'test-pe', role: 'principal_architect', project: PROJECT })
+    await openMockedConfigPage(page)
+
+    await page.getByTestId('visibility-private-option').click()
+    await expect(page.getByRole('heading', { name: 'Make project private?' })).toBeVisible()
+    await page.getByRole('button', { name: 'Cancel' }).click()
+
+    await expect(page.getByRole('heading', { name: 'Make project private?' })).not.toBeVisible()
+    await expect(page.getByTestId('visibility-public-option')).toHaveAttribute('aria-pressed', 'true')
+    expect(writes).toHaveLength(0)
+
+    await page.getByTestId('visibility-private-option').click()
+    await page.getByRole('button', { name: 'Make Private' }).click()
+
+    await expect.poll(() => writes.length).toBe(1)
+    expect(writes[0].is_public).toBe(false)
+    await expect(page.getByTestId('visibility-success')).toContainText('Project is now private')
+  })
+
+  test('step 7 — platform admin can manage visibility without a principal architect role', async ({ page }) => {
+    test.skip(shouldSkip, SKIP_MSG)
+    await mockVisibilityConfig(page, false)
+    await injectSession(page, {
+      sub: 'test-admin',
+      role: 'engineer',
+      is_admin: true,
+      project: PROJECT,
+    })
+    await openMockedConfigPage(page)
+
+    await expect(page.getByTestId('visibility-public-option')).toBeEnabled()
+    await expect(page.getByTestId('visibility-private-option')).toBeEnabled()
+  })
+
+  test('step 8 — ordinary members see project visibility as read-only', async ({ page }) => {
+    test.skip(shouldSkip, SKIP_MSG)
+    await mockVisibilityConfig(page, true)
+    await injectSession(page, { sub: 'test-engineer', role: 'engineer', project: PROJECT })
+    await openMockedConfigPage(page)
+
+    await expect(page.getByTestId('project-visibility-card')).toContainText('Public')
+    await expect(page.getByTestId('visibility-read-only')).toContainText('Only principal architects and platform admins can change this setting.')
+    await expect(page.getByTestId('visibility-public-option')).toHaveCount(0)
+    await expect(page.getByTestId('visibility-private-option')).toHaveCount(0)
+  })
+
+  test('step 9 — failed visibility saves show inline error feedback and preserve current state', async ({ page }) => {
+    test.skip(shouldSkip, SKIP_MSG)
+    await mockVisibilityConfig(page, false, { putStatus: 502 })
+    await injectSession(page, { sub: 'test-pe', role: 'principal_architect', project: PROJECT })
+    await openMockedConfigPage(page)
+
+    await page.getByTestId('visibility-public-option').click()
+
+    await expect(page.getByTestId('visibility-error')).toContainText('Failed to update config in S3')
+    await expect(page.getByTestId('visibility-private-option')).toHaveAttribute('aria-pressed', 'true')
   })
 })
 
