@@ -94,25 +94,27 @@ export default function KnowledgeDetail({ row, onClose }) {
 
         {/* Content */}
         <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500">Knowledge</h3>
-            {selectedVersion && (
-              <span className="text-[10px] text-amber-500 font-medium">
-                v{selectedVersion.version} · {selectedVersion.status}
-                {' '}·{' '}
-                <button
-                  className="underline hover:text-amber-600"
-                  onClick={() => setSelectedVersion(null)}
-                >
-                  back to current
-                </button>
-              </span>
-            )}
-          </div>
+          <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-3">Knowledge</h3>
           {isLoading ? (
             <p className="text-xs text-gray-400 animate-pulse">Loading…</p>
           ) : content ? (
-            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{content}</p>
+            selectedVersion ? (
+              <div className="rounded-lg border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 px-3 py-2.5">
+                <p className="text-[10px] font-medium text-amber-600 dark:text-amber-400 mb-2">
+                  v{selectedVersion.version} · {selectedVersion.status} · {fmtDate(selectedVersion.created_at)}
+                  {' — '}
+                  <button
+                    className="underline hover:text-amber-700 dark:hover:text-amber-300"
+                    onClick={() => setSelectedVersion(null)}
+                  >
+                    back to current
+                  </button>
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">{content}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{content}</p>
+            )
           ) : (
             <p className="text-xs text-gray-400 italic">
               Content not stored — this entry predates the durable summary store.
