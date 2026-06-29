@@ -11,8 +11,8 @@ npm run build
 npm run test:e2e
 ```
 
-The development server runs on `http://localhost:3002` and proxies gateway
-requests to `http://localhost:3001`.
+The development server runs on `http://localhost:5173` and proxies gateway
+requests to `VITE_GATEWAY_URL`, which defaults to `http://localhost:8002`.
 
 ## Authentication
 
@@ -54,4 +54,6 @@ Projectless browser coverage lives in
 - `.github/workflows/build.yml` publishes `ghcr.io/ayansasmal/quorum-dashboard`.
 - The GHCR image exists for local development and E2E or containerized dashboard
   flows that need the dashboard packaged as a container image.
+- Pull requests against `main` should validate the Docker build without
+  publishing an image.
 - Vercel remains the live production hosting path for the dashboard.
