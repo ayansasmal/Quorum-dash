@@ -48,3 +48,10 @@ Run `npm run build` after frontend changes. Run the relevant Playwright scenario
 for behavior changes, and use the in-app browser for significant visual changes.
 Projectless browser coverage lives in
 `tests/e2e/scenarios/23-self-serve-onboarding.spec.js`.
+
+## CI/CD
+
+- `.github/workflows/build.yml` publishes `ghcr.io/ayansasmal/quorum-dashboard`.
+- The GHCR image exists for local development and E2E or containerized dashboard
+  flows that need the dashboard packaged as a container image.
+- Vercel remains the live production hosting path for the dashboard.
