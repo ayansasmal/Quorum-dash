@@ -1,0 +1,35 @@
+# ── build outputs (rebuilt inside the image) ──────────────────────────────────
+node_modules
+dist
+
+# ── git + CI ──────────────────────────────────────────────────────────────────
+.git
+.gitignore
+.github
+
+# ── tests + reports ───────────────────────────────────────────────────────────
+tests
+playwright-report
+test-results
+playwright.config.js
+
+# ── E2E tooling (not needed in production nginx image) ────────────────────────
+scripts
+Dockerfile.e2e
+docker-compose.e2e.yml
+
+# ── deployment tooling ────────────────────────────────────────────────────────
+.vercel
+
+# ── env files (must never be baked into an image) ─────────────────────────────
+.env
+.env.*
+
+# ── docs ──────────────────────────────────────────────────────────────────────
+*.md
+AGENTS.md
+
+# ── logs + OS junk ────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+.DS_Store

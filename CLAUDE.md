@@ -59,12 +59,41 @@ src/
 ## Development
 
 ```bash
-npm run dev      # Vite dev server at http://localhost:3002
+npm run dev      # Vite dev server at http://localhost:3002 (hot-reload — use for active UI work)
 npm run build    # Production build → dist/
 npm run preview  # Preview production build
 ```
 
 The gateway must be running at `http://localhost:3001` for the dashboard to function.
+
+### Alternative: run via Docker (no Node.js, no npm install)
+
+The dashboard can also run as a Docker nginx container inside the main Quorum stack.
+This builds the SPA once and serves it behind nginx (same as production). Use this when
+you want the dashboard running in the background without keeping a Vite terminal open.
+
+```bash
+# From the quorum/ repo (requires ../quorum-dash to exist as a sibling):
+npm run docker:start:dash       # build image + start → http://localhost:3002
+npm run docker:rebuild:dash     # rebuild after React code changes, then restart
+npm run docker:stop:dash        # stop dashboard only
+```
+
+nginx inside the container proxies `/api/*`, `/auth/*`, and other gateway paths to
+`http://gateway:3001` (Docker internal DNS) — same-origin from the browser, no CORS needed.
+
+**When to use which:**
+| Mode | Command | Use for |
+|------|---------|---------|
+| Vite direct | `npm run dev` (from quorum-dash/) | Active React dev — fastest hot-reload, no Docker overhead |
+| Docker hot-reload | `npm run docker:start:dash:dev` (from quorum/) | React dev inside Docker; first start ~30s (npm ci), then hot |
+| Docker nginx | `npm run docker:start:dash` (from quorum/) | Background "just works" — production-like, no terminal needed |
+
+**Dashboard Dockerfile highlights:**
+- Three-stage build (`deps` → `builder` → `runtime`) — source changes skip `npm ci`
+- BuildKit `--mount=type=cache` for npm — only new packages downloaded on rebuild
+- `.dockerignore` excludes `node_modules/` and `dist/` — build context is fast
+- Runs as `nginx` user (non-root) on port 8080; host maps to `localhost:3002`
 
 ---
 
@@ -75,13 +104,43 @@ Browser (`@ui`) E2E tests live in [tests/e2e/](tests/e2e/) — see
 box**: tests seed state and read results over HTTP only (`QUORUM_GATEWAY_URL`),
 never importing gateway source, and drive the dashboard at `QUORUM_DASHBOARD_URL`.
 
+### Local dev E2E (fastest)
+
 ```bash
-npm run test:e2e          # headless (auto-starts Vite when dashboard URL is local)
+# 1. Start test-keyed gateway + backend (in quorum/ repo):
+#    cd ../quorum && npm run test:e2e:env:setup
+# 2. Run dashboard browser tests (Vite auto-starts on localhost:3002):
+npm run test:e2e          # headless
 npm run test:e2e:headed   # visible browser
 npm run test:e2e:ui       # Playwright interactive UI
 ```
 
 Requires a running test gateway keyed with the committed ES256 test public key.
+
+### Fully isolated Docker E2E
+
+Runs everything in containers — no Node.js or gateway needed on the host.
+`docker-compose.e2e.yml` joins the external `quorum-e2e_e2e` network created by
+the quorum backend stack, adding only the dashboard nginx container and a
+Playwright browser test runner with system Chromium.
+
+```bash
+npm run test:e2e:docker         # full isolated run (up + tests + down)
+npm run test:e2e:docker:up      # start backend + dashboard (no tests yet)
+npm run test:e2e:docker:run     # run tests against running stack
+npm run test:e2e:docker:down    # stop all containers
+npm run test:e2e:docker:clean   # stop + wipe volumes (fresh state)
+```
+
+`scripts/e2e-docker.sh` orchestrates startup order: quorum backend first
+(gateway + localstack + graphiti + …), then dashboard, then Playwright runner.
+Requires `quorum/` checked out as a sibling directory.
+
+**When to use which:**
+| Mode | Command | Use for |
+|------|---------|---------|
+| Local Vite | `npm run test:e2e` | Active development — fastest, hot-reload |
+| Docker isolated | `npm run test:e2e:docker` | CI pipelines, full integration validation |
 Every `describe` keeps its `S-XX.Y` scenario ID for traceability back to the
 gateway E2E plan; only the browser halves of those scenarios live here (the
 API-level halves stay in the gateway repo).
