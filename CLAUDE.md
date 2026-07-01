@@ -99,55 +99,18 @@ nginx inside the container proxies `/api/*`, `/auth/*`, and other gateway paths 
 
 ## E2E Tests
 
-Browser (`@ui`) E2E tests live in [tests/e2e/](tests/e2e/) — see
-[tests/e2e/README.md](tests/e2e/README.md). The gateway is treated as a **black
-box**: tests seed state and read results over HTTP only (`QUORUM_GATEWAY_URL`),
-never importing gateway source, and drive the dashboard at `QUORUM_DASHBOARD_URL`.
+The dashboard no longer owns a separate Playwright or Docker E2E harness.
+Unified API + UI end-to-end coverage now lives in `../quorum/e2e/`.
 
-### Local dev E2E (fastest)
+Run shared scenarios from the Quorum repo:
 
 ```bash
-# 1. Start test-keyed gateway + backend (in quorum/ repo):
-#    cd ../quorum && npm run test:e2e:env:setup
-# 2. Run dashboard browser tests (Vite auto-starts on localhost:3002):
-npm run test:e2e          # headless
-npm run test:e2e:headed   # visible browser
-npm run test:e2e:ui       # Playwright interactive UI
+cd ../quorum
+npm run test:e2e:env:setup
+npm run test:e2e
 ```
 
-Requires a running test gateway keyed with the committed ES256 test public key.
-
-### Fully isolated Docker E2E
-
-Runs everything in containers — no Node.js or gateway needed on the host.
-`docker-compose.e2e.yml` joins the external `quorum-e2e_e2e` network created by
-the quorum backend stack, adding only the dashboard nginx container and a
-Playwright browser test runner with system Chromium.
-
-```bash
-npm run test:e2e:docker         # full isolated run (up + tests + down)
-npm run test:e2e:docker:up      # start backend + dashboard (no tests yet)
-npm run test:e2e:docker:run     # run tests against running stack
-npm run test:e2e:docker:down    # stop all containers
-npm run test:e2e:docker:clean   # stop + wipe volumes (fresh state)
-```
-
-`scripts/e2e-docker.sh` orchestrates startup order: quorum backend first
-(gateway + localstack + graphiti + …), then dashboard, then Playwright runner.
-Requires `quorum/` checked out as a sibling directory.
-
-**When to use which:**
-| Mode | Command | Use for |
-|------|---------|---------|
-| Local Vite | `npm run test:e2e` | Active development — fastest, hot-reload |
-| Docker isolated | `npm run test:e2e:docker` | CI pipelines, full integration validation |
-Every `describe` keeps its `S-XX.Y` scenario ID for traceability back to the
-gateway E2E plan; only the browser halves of those scenarios live here (the
-API-level halves stay in the gateway repo).
-
-`S-23.3` covers the authenticated zero-project welcome state. The scenario is
-implemented and discoverable; its live browser run was blocked on June 13, 2026
-by the local command-approval service usage limit.
+Dashboard-specific browser scenarios live under `../quorum/e2e/scenarios/ui/`.
 
 ---
 

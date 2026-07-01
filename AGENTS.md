@@ -8,7 +8,6 @@ and deploys independently from the gateway and MCP packages.
 ```bash
 npm run dev
 npm run build
-npm run test:e2e
 ```
 
 The development server runs on `http://localhost:5173` and proxies gateway
@@ -45,9 +44,17 @@ requests to `VITE_GATEWAY_URL`, which defaults to `http://localhost:8002`.
 ## Verification
 
 Run `npm run build` after frontend changes. Run the relevant Playwright scenario
-for behavior changes, and use the in-app browser for significant visual changes.
-Projectless browser coverage lives in
-`tests/e2e/scenarios/23-self-serve-onboarding.spec.js`.
+for behavior changes from the unified Quorum-owned E2E suite in
+`../quorum/e2e/`, and use the in-app browser for significant visual changes.
+Projectless browser coverage now lives in
+`../quorum/e2e/scenarios/ui/23-self-serve-onboarding.spec.js`.
+
+## E2E Ownership
+
+- `quorum-dash` no longer owns a separate Playwright or Docker E2E harness.
+- API + browser end-to-end coverage now lives under `../quorum/e2e/`.
+- When changing dashboard behavior, update or run the relevant UI scenario from
+  the shared Quorum suite rather than recreating local test infrastructure here.
 
 ## CI/CD
 
