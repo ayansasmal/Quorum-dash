@@ -219,7 +219,7 @@ export default function Config() {
           Changes take effect when you save the config.
         </p>
         {(() => {
-          const available  = globalsData?.catalogs ?? []
+          const available  = globalsData ?? []
           const linked     = draft.globals ?? []
           const currentId  = draft.group_id
 
