@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { usePending, useDrafts, usePromoteDraft, useReviewDeprecationRequest } from '../api/pending.js'
 import { useDeviations } from '../api/deviations.js'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -18,6 +18,7 @@ export default function Pending() {
 
   const [promoteTarget,   setPromoteTarget]   = useState(null)
   const [deprecationReview, setDeprecationReview] = useState(null) // { request, action }
+  const [expandedKey, setExpandedKey] = useState(null) // `${topic}:${key}` of the draft row currently showing its content
 
   const allPending          = Array.isArray(pendingData) ? pendingData : []
   const decisions           = allPending.filter(r => (r.decision_type ?? 'conflict') === 'conflict')
@@ -64,10 +65,22 @@ export default function Pending() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200/50 dark:divide-gray-800/50">
-                {drafts.map((row) => (
-                  <tr key={`${row.topic}:${row.key}`} className="hover:bg-gray-100/40 dark:hover:bg-gray-800/40">
+                {drafts.map((row) => {
+                  const rowKey = `${row.topic}:${row.key}`
+                  const isExpanded = expandedKey === rowKey
+                  return (
+                  <Fragment key={rowKey}>
+                  <tr className="hover:bg-gray-100/40 dark:hover:bg-gray-800/40">
                     <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400 font-mono text-xs">{row.topic}</td>
-                    <td className="px-4 py-2.5 text-blue-400 font-mono text-xs">{row.key}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">
+                      <button
+                        onClick={() => setExpandedKey(isExpanded ? null : rowKey)}
+                        className="text-blue-400 hover:underline"
+                        aria-expanded={isExpanded}
+                      >
+                        {row.key}
+                      </button>
+                    </td>
                     <td className="px-4 py-2.5">
                       <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${entityBadge(row.entity_type)}`}>
                         {row.entity_type}
@@ -89,7 +102,18 @@ export default function Pending() {
                       </td>
                     )}
                   </tr>
-                ))}
+                  {isExpanded && (
+                    <tr>
+                      <td colSpan={isPE ? 7 : 6} className="px-4 pb-3">
+                        <pre className="whitespace-pre-wrap max-h-64 overflow-y-auto rounded-md bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 p-3 text-xs text-gray-600 dark:text-gray-300 leading-relaxed font-mono">
+                          {row.content ?? <span className="italic text-gray-500">No content available</span>}
+                        </pre>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -277,6 +301,7 @@ export default function Pending() {
           open={Boolean(promoteTarget)}
           title="Promote to Active?"
           body={`Promote ${promoteTarget.topic}:${promoteTarget.key} to Active? It will replace any existing Active version.`}
+          content={promoteTarget.content}
           confirmLabel="Promote"
           noteLabel="Reason for promoting"
           noteRequired={true}

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  * @param {boolean} props.open - Whether the dialog is visible
  * @param {string} props.title - Dialog title
  * @param {string} props.body - Dialog body text
+ * @param {string} [props.content] - Optional raw knowledge text to preview (e.g. the draft being promoted) between the body and the note field
  * @param {string} props.confirmLabel - Confirm button label
  * @param {boolean} [props.destructive=false] - If true, confirm button is red instead of blue
  * @param {string} [props.noteLabel] - Label for the note/reason textarea
@@ -21,6 +22,7 @@ export default function ConfirmDialog({
   open,
   title,
   body,
+  content,
   confirmLabel = 'Confirm',
   destructive = false,
   noteLabel,
@@ -104,6 +106,13 @@ export default function ConfirmDialog({
         <p className="text-sm text-gray-600 dark:text-gray-400">
           {body}
         </p>
+
+        {/* Content Preview */}
+        {content && (
+          <pre className="whitespace-pre-wrap max-h-48 overflow-y-auto rounded-md bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 p-3 text-xs text-gray-600 dark:text-gray-300 leading-relaxed font-mono">
+            {content}
+          </pre>
+        )}
 
         {/* Error Banner */}
         {error && (
